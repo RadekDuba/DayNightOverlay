@@ -32,7 +32,8 @@ class DayNightOverlay {
       fillColor: '#030712',
       fillOpacity: 0.45,
       resolution: 2, // points per degree longitude (resolution: 2 sweeps with 720 longitude points)
-      visible: true
+      visible: true,
+      beforeId: undefined // optional layer ID to insert the shadow before
     }, options);
 
     this.visible = this.options.visible;
@@ -73,6 +74,25 @@ class DayNightOverlay {
       }
     });
 
+    // Find the first symbol/label layer so labels, roads, and borders remain 
+    // bright, readable, and drawn on top of the shadow, and to blend cleanly with fog
+    let beforeId = this.options.beforeId;
+    if (!beforeId) {
+      const style = this.map.getStyle();
+      const layers = style ? style.layers : null;
+      if (layers) {
+        const firstSymbol = layers.find(l => l.type === 'symbol');
+        if (firstSymbol) {
+          beforeId = firstSymbol.id;
+        } else {
+          const firstLine = layers.find(l => l.type === 'line');
+          if (firstLine) {
+            beforeId = firstLine.id;
+          }
+        }
+      }
+    }
+
     this.map.addLayer({
       id: this.options.layerId,
       type: 'fill',
@@ -81,7 +101,7 @@ class DayNightOverlay {
         'fill-color': this.options.fillColor,
         'fill-opacity': this.options.fillOpacity
       }
-    });
+    }, beforeId);
 
     this.map.setLayoutProperty(
       this.options.layerId,
